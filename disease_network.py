@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import networkx as nx  
 
 df = pd.read_csv("simulated_hospital_large_dataset.csv")
-
-disease = ["hypertension","diabetes", "hyperlipidemia", "CKD","CAD","stroke_history"]
+df["obesity"] = (df["BMI"] >= 27).astype(int)
+disease = ["hypertension","diabetes", "obesity","hyperlipidemia", "CKD","CAD","stroke_history"]
 print(df[disease].head())
 print(df[disease].mean().sort_values(ascending=False))  
 
