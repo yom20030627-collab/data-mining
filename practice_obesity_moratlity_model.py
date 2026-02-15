@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-df = pd.read_csv("simulated_hospital_large_dataset.csv")
+df = pd.read_csv("simulated_hospital_vte_upgraded_dataset.csv")
 df["obesity"] = (df["BMI"] >= 27).astype(int)
 df["HTN-DM"] = df["hypertension"] * df["diabetes"]
 df["obesity-HTN"] = df["obesity"] * df["hypertension"]
