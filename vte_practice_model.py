@@ -50,7 +50,8 @@ print("ROC AUC:", roc_auc_score(y_test, y_prob))
 print("PR AUC:", average_precision_score(y_test, y_prob))
 
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, f1_score, roc_auc_score, classification_report, roc_auc_score
+from sklearn.metrics import classification_report, f1_score, roc_auc_score, classification_report
+from sklearn.metrics import roc_curve as roc_curve_vte
 
 RandomForestClassifier(
     n_estimators=500,
@@ -65,9 +66,24 @@ log_model = LogisticRegression(max_iter=1000, class_weight='balanced')
 log_model.fit(X_train, y_train)
 
 y_prob = model.predict_proba(X_test)[:, 1]  # Probability of positive class (mortality)
-y_pred = (y_prob >= 0.5).astype(int)  # Threshold at 0.5
 y_prob_log = log_model.predict_proba(X_test)[:,1]
-fpr2, tpr2, _ = roc_curve(y_test, y_prob_log)
+cutoff = np.percentile(y_prob, 95)  # Set cutoff at 95th percentile
+y_pred = (y_prob >= cutoff).astype(int)  # Convert probabilities to binary predictions
+fpr2, tpr2, _ = roc_curve_vte(y_test, y_prob_log)
+from sklearn.metrics import f1_score
+
+best_f1 = 0
+best_t = 0
+
+for t in np.linspace(0.001, 0.05, 50):
+    temp_pred = (y_prob >= t).astype(int)
+    f1 = f1_score(y_test, temp_pred)
+    if f1 > best_f1:
+        best_f1 = f1
+        best_t = t
+
+print("Best threshold:", best_t)
+
 
 plt.plot(fpr2, tpr2)
 
@@ -84,14 +100,15 @@ print(classification_report(y_test,y_pred))
 print("ROC AUC Score:", roc_auc_score(y_test, y_prob))
 print(df["VTE"].value_counts(normalize=True))
 print("Logistic Regression ROC AUC Score:", roc_auc_score(y_test, log_model.predict_proba(X_test)[:, 1]))
+print(df.groupby("CKD")["VTE"].mean())
 
-from sklearn.metrics import roc_curve
+
 import matplotlib.pyplot as plt
 
 from sklearn.metrics import precision_recall_curve
 
 precision, recall, _ = precision_recall_curve(y_test, y_prob)
-roc_curve = roc_curve(y_test, y_prob)
+roc_curve = roc_curve_vte(y_test, y_prob)
 plt.plot(roc_curve[0], roc_curve[1])
 
 plt.plot(recall, precision)
@@ -100,10 +117,15 @@ plt.ylabel("Precision")
 plt.title("Precision-Recall Curve")
 plt.show()
 
-fpr, tpr, thresholds = roc_curve(y_test, y_prob)
+fpr, tpr, thresholds = roc_curve_vte(y_test, y_prob)
 plt.plot(fpr, tpr)
 plt.plot([0, 1], [0, 1], '--')  # Diagonal line for reference
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate') 
 plt.title('ROC Curve')
+plt.show()
+
+plt.hist(y_prob[y_test==0], bins=50, alpha=0.5, label="No VTE")
+plt.hist(y_prob[y_test==1], bins=50, alpha=0.5, label="VTE")
+plt.legend()
 plt.show()
