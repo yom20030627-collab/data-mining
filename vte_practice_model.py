@@ -125,7 +125,7 @@ plt.ylabel('True Positive Rate')
 plt.title('ROC Curve')
 plt.show()
 
-plt.hist(y_prob[y_test==0], bins=50, alpha=0.5, label="No VTE")
+plt.hist(y_prob[y_test==0], bins=50, alpha=0.5, label="No VTE")   
 plt.hist(y_prob[y_test==1], bins=50, alpha=0.5, label="VTE")
 plt.legend()
 plt.show()
