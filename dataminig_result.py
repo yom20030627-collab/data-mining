@@ -4,7 +4,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 
 # 讀資料
-df = pd.read_excel("C:/Users/user/Desktop/expanded_pd_microbiome_dataset.xlsx")
+df = pd.read_excel("C:/Users/user/Desktop/python_practice/expanded_pd_microbiome_dataset.xlsx")
 df["ICD"] = (df["ICD"] > 0.15).astype(int)
 print(df["ICD"].value_counts())
 
@@ -17,9 +17,6 @@ features = [
     "Amino_acid_metabolism",
     "Entacapone"
 ]
-
-X = df[features]
-y = df["ICD"]
 
 # 切 train/test：保持 ICD 比例一致
 # 修 label
@@ -61,37 +58,73 @@ plt.show()
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
+from sklearn.impute import SimpleImputer
+import matplotlib.pyplot as plt
 
+# 1. 先補 X 裡面的 NaN
+imputer = SimpleImputer(strategy="mean")
+X_imputed = imputer.fit_transform(X)
+
+# 2. 再標準化
 scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
+X_scaled = scaler.fit_transform(X_imputed)
 
-pca = PCA(n_components=2, random_state=42)
+# 3. PCA
+pca = PCA(n_components=2)
 X_pca = pca.fit_transform(X_scaled)
 
+plt.figure(figsize=(6,5))
 plt.scatter(X_pca[:,0], X_pca[:,1], c=y)
 plt.title("PCA of Microbiome Data by ICD Status")
 plt.xlabel("PC1")
 plt.ylabel("PC2")
 plt.show()
 
+# 4. K-means
 kmeans = KMeans(n_clusters=2, random_state=42, n_init=10)
 clusters = kmeans.fit_predict(X_scaled)
 
+plt.figure(figsize=(6,5))
 plt.scatter(X_pca[:,0], X_pca[:,1], c=clusters)
 plt.title("K-means Clustering Result")
 plt.xlabel("PC1")
 plt.ylabel("PC2")
 plt.show()
 
-from sklearn.cluster import KMeans
-
-kmeans = KMeans(n_clusters=2)
-clusters = kmeans.fit_predict(X)
-
-plt.scatter(X_pca[:,0], X_pca[:,1], c=clusters)
-plt.title("Clustering result")
-plt.show()
-
 print("ICD distribution:")
 print(y.value_counts())
 print(y.value_counts(normalize=True))
+
+#去除 Entacapone 後的模型
+features_no_entacapone = [
+    "Methanobrevibacter", "Intestinimonas",
+    "Faecalibacterium", "Lactobacillus",
+    "Bifidobacterium",
+    "Nicotinate_metabolism",
+    "Caffeine_metabolism",
+    "Amino_acid_metabolism"
+]
+
+X_no_ent = df[features_no_entacapone]
+y = df["ICD"]
+
+# 補缺失值
+imputer = SimpleImputer(strategy="mean")
+X_imputed = imputer.fit_transform(X_no_ent)
+
+# 標準化
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X_imputed)
+
+# PCA
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(X_scaled)
+
+# 畫圖：顏色是 ICD
+plt.figure(figsize=(6,5))
+plt.scatter(X_pca[:, 0], X_pca[:, 1], c=y)
+plt.title("PCA of Microbiome Data by ICD Status\nWithout Entacapone")
+plt.xlabel("PC1")
+plt.ylabel("PC2")
+plt.tight_layout()
+plt.show()
